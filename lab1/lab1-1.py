@@ -25,6 +25,12 @@ harmonics, time = complexity.getGenerationComplexity(
   DISCRETE_CALLS
 )
 
+signalAT = signalGenerator.createSignalAT(
+  HARMONICS,
+  MAX_FREQUENCY,
+  DISCRETE_CALLS
+)
+
 fig, axs = plt.subplots(2)
 fig.suptitle('Lab 1.1')
 
@@ -36,6 +42,12 @@ axs[0].set(xlabel='time', ylabel='generated signal')
 axs[1].plot(harmonics, time)
 axs[1].set_title('Signal generation complexity')
 axs[1].set(xlabel='n', ylabel='elapsed time (seconds)')
-
-plt.show()
 fig.savefig('graphs/lab1-1.png')
+
+plt.figure()
+plt.plot(signalAT, linewidth='0.75')
+plt.title('Additional task')
+plt.xlabel('time')
+plt.ylabel('generated signal')
+plt.savefig('graphs/additionalTask(1-1).png')
+plt.show()

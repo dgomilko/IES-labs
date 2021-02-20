@@ -1,0 +1,2 @@
+Autocorrelation average time: 0.04758346495998694
+Cross-correlation average time: 0.047622467624996716

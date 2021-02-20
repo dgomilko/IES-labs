@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import time
 import signalGenerator
 import calc
 import complexity
@@ -18,8 +19,28 @@ signalY = signalGenerator.createSignal(
   MAX_FREQUENCY,
   DISCRETE_CALLS
 )
+
 autocorrelation = calc.correlation(signalX)
 correlation = calc.correlation(signalX, signalY)
+
+elapsedAuto = []
+elapsedCross = []
+for _ in range(COMPLEXITY_COUNT_LOOPS):
+  startAuto = time.perf_counter()
+  calc.correlation(signalX)
+  stopAuto = time.perf_counter()
+  elapsedAuto.append(stopAuto - startAuto)
+
+  startCross = time.perf_counter()
+  calc.correlation(signalX, signalY)
+  stopCross = time.perf_counter()
+  elapsedCross.append(stopCross - startCross)
+avgAuto = calc.mean(elapsedAuto)
+avgCross = calc.mean(elapsedCross)
+file = open("timeTest.txt", "w+")
+file.write('Autocorrelation average time: ' + str(avgAuto) + '\n')
+file.write('Cross-correlation average time: ' + str(avgCross))
+file.close()
 
 harmonics, time = complexity.getCorrealtionComplexity(
   COMPLEXITY_COUNT_LOOPS,
