@@ -40,4 +40,4 @@ axs[2].set_title('DFT complexity')
 axs[2].set(xlabel='time', ylabel='signal size')
 
 plt.show()
-fig.savefig('graphs/lab1-2.png')
+fig.savefig('graphs/lab2-1.png')
