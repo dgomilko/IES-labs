@@ -37,7 +37,7 @@ axs[1].set(xlabel='p', ylabel='F(p)')
 
 axs[2].plot(lens, elapsed, color='g')
 axs[2].set_title('DFT complexity')
-axs[2].set(xlabel='time', ylabel='signal size')
+axs[2].set(xlabel='signal size', ylabel='time')
 
 plt.show()
 fig.savefig('graphs/lab2-1.png')
