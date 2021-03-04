@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 from lab1.signalGenerator import createSignal
 
-def getDFTComplexity(stepsCount, harmonics, maxFrequency):
+def getDFTComplexity(stepsCount, harmonics, maxFrequency, dataType):
   elapsed = []
   size = []
   for i in range(stepsCount):
@@ -12,7 +12,8 @@ def getDFTComplexity(stepsCount, harmonics, maxFrequency):
     size.append(count)
     signal = createSignal(harmonics, maxFrequency, count)
     start = time.perf_counter()
-    discreteFourierTransform(signal)
+    discreteFourierTransform(signal, dataType)
     stop = time.perf_counter()
     elapsed.append(stop - start)
-  return size, elapsed
+  average = sum(elapsed)/stepsCount
+  return size, elapsed, average

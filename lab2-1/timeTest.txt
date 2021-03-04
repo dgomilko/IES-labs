@@ -1,0 +1,2 @@
+DFT with list() average time: 1.018516918375001
+DFT with dict() average time: 1.0179554193050127
