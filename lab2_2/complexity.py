@@ -1,4 +1,4 @@
-from fft import fastFourierTransform
+from fft import fastFourierTransformRecursion
 import time
 import sys
 sys.path.append('../')
@@ -16,7 +16,7 @@ def getComplexity(stepsCount, harmonics, maxFrequency, type):
     if (type == "DFT"):
       discreteFourierTransform(signal, "list")
     else:
-      fastFourierTransform(signal)
+      fastFourierTransformRecursion(signal)
     stop = time.perf_counter()
     elapsed.append(stop - start)
   return size, elapsed
