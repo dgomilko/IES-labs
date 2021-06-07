@@ -5,6 +5,12 @@ from consts import TACT_SIZE
 
 tasks, activeTasks = list(), list()
 
+def taskID(task):
+  return f'{task.arrivalTime}{task.period}{task.deadline}'
+
+def areTasksEqual(taskA, taskB):
+  return taskID(taskA) == taskID(taskB)
+
 def checkForNewTasks(time):
     global tasks, activeTasks
     futureTasks = lambda x: x.arrivalTime > time
@@ -27,16 +33,19 @@ def checkMissedTasks(tasks, resTasks):
   for task in tasks:
     processed = False
     for taskRes in resTasks:
-      if task.arrivalTime == taskRes.arrival: processed = True
+      if task.arrivalTime == taskRes.arrival \
+        and task.deadline == taskRes.deadline:
+          processed = True
     if not processed: diff.append(task)
   return diff
 
 def BaseDynamicScheduler(estimatePriority, allTasks):
   global tasks, activeTasks
   tasks = deepcopy(allTasks)
+  tasks.sort(key=lambda x: x.arrivalTime)
   timestamps = dict()
   curTime, tactCount, idle = 0, 0, 0
-  for task in tasks: timestamps[task.arrivalTime] = list()
+  for task in tasks: timestamps[taskID(task)] = list()
   resTasks = list()
   while activeTasks or tasks:
     if tasks: checkForNewTasks(curTime)
@@ -44,7 +53,12 @@ def BaseDynamicScheduler(estimatePriority, allTasks):
     missed = list(filter(lambda x: x.deadline <= curTime, activeTasks))
     estimatePriority(activeTasks)
     for missedTask in missed:
-      task = ProcessedTask(missedTask.arrivalTime, [curTime, curTime], True)
+      task = ProcessedTask(
+        missedTask.arrivalTime,
+        missedTask.deadline,
+        [curTime, curTime],
+        True
+      )
       resTasks.append(task)
       
     remainedTime = tactCount or TACT_SIZE
@@ -65,26 +79,31 @@ def BaseDynamicScheduler(estimatePriority, allTasks):
         curTime = task.arrivalTime
         tactCount -= diff
     
-    timestamps[task.arrivalTime].append(curTime)
+    timestamps[taskID(task)].append(curTime)
     fitsIntoTact = task.wcet < remainedTime
     elapsedInTact = task.wcet if fitsIntoTact else remainedTime
     newTask = waitForTasks(curTime, elapsedInTact, estimatePriority)
-    if newTask and newTask.arrivalTime != task.arrivalTime:
+    if newTask and not areTasksEqual(task, newTask):
       task.wcet -= newTask.arrivalTime - curTime
       curTime = newTask.arrivalTime
-      timestamps[task.arrivalTime].append(curTime)
+      timestamps[taskID(task)].append(curTime)
       task = newTask
-      timestamps[task.arrivalTime].append(curTime)
+      timestamps[taskID(task)].append(curTime)
       fitsIntoTact = task.wcet < remainedTime
       elapsedInTact = task.wcet if fitsIntoTact else remainedTime
     curTime += elapsedInTact
-    timestamps[task.arrivalTime].append(curTime)
+    timestamps[taskID(task)].append(curTime)
     if not fitsIntoTact:
       task.wcet -= remainedTime
       tactCount = 0
     else:
       missed = task.deadline < curTime
-      task = ProcessedTask(task.arrivalTime, timestamps[task.arrivalTime], missed)
+      task = ProcessedTask(
+        task.arrivalTime,
+        task.deadline,
+        timestamps[taskID(task)],
+        missed
+      )
       resTasks.append(task)
       activeTasks.pop(0)
       tactCount = remainedTime - elapsedInTact
@@ -92,15 +111,20 @@ def BaseDynamicScheduler(estimatePriority, allTasks):
   missed = checkMissedTasks(allTasks, resTasks)
   if missed:
     for task in missed: 
-      task = ProcessedTask(task.arrivalTime, [curTime, curTime], True)
+      task = ProcessedTask(
+        task.arrivalTime,
+        task.deadline,
+        [curTime, curTime],
+        True
+      )
       resTasks.append(task)
   return SchedulingResult(resTasks, idle, curTime)
 
 def estimatePriorityEDF(tasks):
-    return tasks.sort(key=lambda x: x.deadline)  
+    return tasks.sort(key=lambda x: (x.deadline, x.wcet))  
 
 def estimatePriorityRM(tasks):
-    return tasks.sort(key=lambda x: x.wcet)  
+    return tasks.sort(key=lambda x: (x.period, x.wcet, x.deadline))  
 
 EDF = partial(BaseDynamicScheduler, estimatePriorityEDF)
 RM = partial(BaseDynamicScheduler, estimatePriorityRM)

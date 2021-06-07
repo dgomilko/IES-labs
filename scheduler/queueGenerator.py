@@ -1,6 +1,6 @@
 from math import exp
-from random import uniform, sample, choice
-from consts import possibleTasks, TACT_SIZE
+from random import uniform, triangular
+from consts import possibleTasks
 from task import Task
 
 def poisson(lambdaVal):
@@ -15,27 +15,32 @@ def poisson(lambdaVal):
     factorial = generated * factorial
     pow = pow * lambdaVal
     temp = temp + pow * exponent / factorial
-  return generated
+  return generated * 0.1
 
-def getNewTasks(intensity):
-  availableTasksNum = len(possibleTasks)
-  newTasksNum = poisson(intensity)
-  newTasks = list()
-  if newTasksNum < availableTasksNum:
-    newTasks = sample(possibleTasks, newTasksNum) 
-  else:
-    newTasks = [choice(possibleTasks) for _ in range(newTasksNum)]
-  return newTasks
+def getPeriods(meanLambda, interval):
+  upperBound = meanLambda * 1.5
+  lowerBound = meanLambda / 1.5
+  mean = 3 * meanLambda - lowerBound - upperBound
+  lams = [triangular(lowerBound, upperBound, mean) for _ in possibleTasks]
+  periods = [round(interval / (poisson(l) or uniform(0.01, 0.5)), 4) for l in lams]
+  return periods
 
-def generateTasks(intensity, queueSize):
-  framesCount = 0
+def generateTasks(intensity, interval, limit = 20):
+  curTime = 0
+  timeLimit = limit * interval
   queue = list()
-  while len(queue) < queueSize:
-    newTasks = getNewTasks(intensity)
-    for wcet in newTasks:
-      startTime = framesCount * TACT_SIZE
-      arrival = round(uniform(startTime, startTime + TACT_SIZE), 5)
-      queue.append(Task(arrival, wcet))
-      if len(queue) == queueSize: break
-    framesCount = framesCount + 1  
+  tasks = dict()
+  periods = getPeriods(intensity, interval)
+  for i, task in enumerate(possibleTasks):
+    period = periods[i]
+    tasks[task] = [period, period]
+  while curTime < timeLimit:
+    for wcet, val in tasks.items():
+      period, lastArrival = val
+      arrival = lastArrival + period
+      if arrival > curTime: continue
+      task = Task(round(arrival, 4), wcet, period)
+      queue.append(task)
+      tasks[wcet][1] = arrival
+    curTime += interval
   return queue

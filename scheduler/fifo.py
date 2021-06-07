@@ -15,6 +15,6 @@ def FIFO(allTasks):
     startTime = curTime
     missed = curTime + task.wcet > task.deadline
     if not missed: curTime = curTime + task.wcet
-    task = ProcessedTask(arrival, [startTime, curTime], missed)
+    task = ProcessedTask(arrival, task.deadline, [startTime, curTime], missed)
     processedTasks.append(task)  
   return SchedulingResult(processedTasks, round(idleTime, 4), round(curTime, 4))    
