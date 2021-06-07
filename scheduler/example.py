@@ -16,6 +16,5 @@ tasks = generateTasks(INTENSITY, INTERVAL, LIMIT)
 for name, sched in schedulers.items():
   printResult(sched(tasks), name)
   
-runSchedulers()
 showGraphs()
-#plt.show()
+plt.show()

@@ -1,7 +1,8 @@
 from functools import partial
 from copy import deepcopy
+from multiprocessing import Process, Queue
 from task import ProcessedTask, SchedulingResult
-from consts import TACT_SIZE
+from consts import TACT_SIZE, PROC_AMOUNT
 
 tasks, activeTasks = list(), list()
 
@@ -39,7 +40,7 @@ def checkMissedTasks(tasks, resTasks):
     if not processed: diff.append(task)
   return diff
 
-def BaseDynamicScheduler(estimatePriority, allTasks):
+def BaseDynamicScheduler(queue, estimatePriority, allTasks):
   global tasks, activeTasks
   tasks = deepcopy(allTasks)
   tasks.sort(key=lambda x: x.arrivalTime)
@@ -83,7 +84,9 @@ def BaseDynamicScheduler(estimatePriority, allTasks):
     fitsIntoTact = task.wcet < remainedTime
     elapsedInTact = task.wcet if fitsIntoTact else remainedTime
     newTask = waitForTasks(curTime, elapsedInTact, estimatePriority)
-    if newTask and not areTasksEqual(task, newTask):
+    if newTask and \
+       not areTasksEqual(task, newTask) and \
+       not task.protected:
       task.wcet -= newTask.arrivalTime - curTime
       curTime = newTask.arrivalTime
       timestamps[taskID(task)].append(curTime)
@@ -118,7 +121,20 @@ def BaseDynamicScheduler(estimatePriority, allTasks):
         True
       )
       resTasks.append(task)
-  return SchedulingResult(resTasks, idle, curTime)
+  queue.put(SchedulingResult(resTasks, idle, curTime))
+
+def multiprocScheduler(estimatePriority, tasks):
+  procs = list()
+  queue = Queue()
+  splitTasks = [tasks[i::PROC_AMOUNT] for i in range(PROC_AMOUNT)]
+  for taskSet in splitTasks:
+    procs.append(Process(
+      target=BaseDynamicScheduler,
+      args=(queue, estimatePriority, taskSet,)
+    ))
+  for proc in procs: proc.start()
+  for proc in procs: proc.join()
+  return [queue.get() for _ in splitTasks]
 
 def estimatePriorityEDF(tasks):
     return tasks.sort(key=lambda x: (x.deadline, x.wcet))  
@@ -126,5 +142,5 @@ def estimatePriorityEDF(tasks):
 def estimatePriorityRM(tasks):
     return tasks.sort(key=lambda x: (x.period, x.wcet, x.deadline))  
 
-EDF = partial(BaseDynamicScheduler, estimatePriorityEDF)
-RM = partial(BaseDynamicScheduler, estimatePriorityRM)
+EDF = partial(multiprocScheduler, estimatePriorityEDF)
+RM = partial(multiprocScheduler, estimatePriorityRM)

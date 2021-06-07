@@ -13,3 +13,4 @@ possibleTasks = [
 ]
 
 TACT_SIZE = 0.5
+PROC_AMOUNT = 2
